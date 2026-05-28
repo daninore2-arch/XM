@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard API XM - Demanda</title>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            padding: 20px;
+        }
+        h2 {
+            color: #005a9c; /* Azul corporativo epm */
+        }
+        table {
+            width: 100%;
+            max-width: 600px;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #009639; /* Verde corporativo epm */
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .nota {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Datos del Mercado Mayorista (XM)</h2>
+    <p>Métrica: <strong>Demanda Real Regulada Sistema</strong></p>
+    <p class="nota">* Los valores mostrados corresponden a la suma total de las 24 horas de cada día.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Demanda Total Diaria (kWh)</th>
+            </tr>
+        </thead>
+        <tbody id="cuerpoTabla">
+            <tr>
+                <td colspan="2" class="loading" id="mensajeCarga">Conectando con la API de XM...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        async function extraerDatosXM() {
+            // 1. Configuración al endpoint HORARIO
+const url = "https://servapibi.xm.com.co/hourly";
+            
+            // Calculamos un rango de fechas automático (últimos 7 días)
+            const hoy = new Date();
+            const haceUnaSemana = new Date(hoy);
+            haceUnaSemana.setDate(hoy.getDate() - 7);
+            
+            const fechaFin = hoy.toISOString().split('T')[0];
+            const fechaInicio = haceUnaSemana.toISOString().split('T')[0];
+
+            const peticion = {
+                "MetricId": "DemaRealReg",
+                "StartDate": fechaInicio,
+                "EndDate": fechaFin,
+                "Entity": "Sistema",
+                "Filter": []
+            };
+
+            try {
+                // 2. Llamado a la API
+                const respuesta = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(peticion)
+                });
+
+                if (!respuesta.ok) {
+                    throw new Error(`Error HTTP: ${respuesta.status}`);
+                }
+
+                const json_data = await respuesta.json();
+                
+                // 3. Transformación de los datos
+                const tbody = document.getElementById('cuerpoTabla');
+                tbody.innerHTML = ''; 
+
+                const items = json_data.Items;
+
+                // Iteramos día por día
+                items.forEach(item => {
+                    const fecha = item.Date.split('T')[0];
+                    let sumaDiaria = 0;
+                    let datosEncontrados = false;
+                    
+                    // Extraemos y sumamos las 24 horas (Hour01 a Hour24)
+                    if (item.HourlyEntities && item.HourlyEntities[0] && item.HourlyEntities[0].Values) {
+                        const horas = item.HourlyEntities[0].Values;
+                        
+                        for (let i = 1; i <= 24; i++) {
+                            // Formateamos el número para que coincida con "Hour01", "Hour02", etc.
+                            let horaKey = "Hour" + String(i).padStart(2, '0');
+                            
+                            if (horas[horaKey] !== undefined) {
+                                sumaDiaria += Number(horas[horaKey]);
+                                datosEncontrados = true;
+                            }
+                        }
+                    }
+
+                    // 4. Inyección en el HTML
+                    const fila = document.createElement('tr');
+                    
+                    // Formateamos el número para separar miles y decimales
+                    const valorFormateado = datosEncontrados 
+                        ? sumaDiaria.toLocaleString('es-CO', { maximumFractionDigits: 2 }) 
+                        : "Sin datos";
+
+                    fila.innerHTML = `
+                        <td>${fecha}</td>
+                        <td>${valorFormateado}</td>
+                    `;
+                    tbody.appendChild(fila);
+                });
+
+            } catch (error) {
+                console.error("Falló la conexión:", error);
+                document.getElementById('mensajeCarga').innerText = "Error al cargar los datos. Revisa la consola (F12).";
+            }
+        }
+
+        // Ejecutamos la función
+        extraerDatosXM();
+    </script>
+
+</body>
+</html>
