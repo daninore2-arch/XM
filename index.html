@@ -2,431 +2,677 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Gerencial - Mercado de Energía XM</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.0"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Control Operativo del Mercado de Energía</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    :root{
+      --epm-green:#009639;
+      --epm-blue:#005a9c;
+      --epm-dark:#17324d;
+      --bg:#f4f7f9;
+      --card:#ffffff;
+      --line:#dfe7ee;
+      --text:#1f2937;
+      --muted:#667085;
+      --shadow:0 10px 28px rgba(15, 23, 42, .07);
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#f8fbfd 0%,#eef4f7 100%);font-family:'Segoe UI',Arial,sans-serif;color:var(--text);}
+    .app{max-width:1320px;margin:0 auto;padding:14px 18px 18px;}
+    .top-note{font-size:11px;color:var(--muted);margin:0 0 6px 2px;line-height:1.35;}
+    .hero{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--epm-green);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+    .hero h1{font-size:22px;line-height:1.15;margin:0;color:var(--epm-dark);letter-spacing:-.02em;font-weight:750;}
+    .hero-actions{display:flex;align-items:center;gap:10px;min-width:360px;justify-content:flex-end;}
+    button{border:0;border-radius:10px;background:var(--epm-green);color:#fff;font-weight:700;font-size:12px;padding:9px 13px;cursor:pointer;transition:.18s ease;white-space:nowrap;}
+    button:hover{filter:brightness(.96);transform:translateY(-1px)}
+    button:disabled{background:#b9c3cc;cursor:not-allowed;transform:none;}
+    .progress-shell{width:150px;height:6px;background:#e7edf2;border-radius:999px;overflow:hidden;}
+    .progress-bar{width:0%;height:100%;background:linear-gradient(90deg,var(--epm-green),#37b66a);transition:width .22s ease;}
+    .status-check{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;background:#edf2f7;color:#94a3b8;border:1px solid #d7dee6;}
+    .status-check.ok{background:#ecfdf3;color:var(--epm-green);border-color:#a7f3d0;}
+    .status-check.info{background:#eff6ff;color:var(--epm-blue);border-color:#bfdbfe;animation:pulse 1.2s infinite ease-in-out;}
+    .status-check.error{background:#fff1f2;color:#e11d48;border-color:#fecdd3;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.48}}
 
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #eef2f5;
-            color: #333;
-            padding: 20px;
-            margin: 0;
-        }
-        .contenedor {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        /* Encabezado Principal */
-        .header-dashboard {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 4px solid #009639; /* Verde Corporativo */
-            margin-bottom: 20px;
-        }
-        h2 { color: #005a9c; margin: 0; }
-        .controles { display: flex; gap: 12px; align-items: center; }
-        
-        /* Selectores y Botones */
-        select {
-            padding: 10px 15px;
-            font-size: 14px;
-            font-weight: bold;
-            color: #005a9c;
-            border: 2px solid #005a9c;
-            border-radius: 5px;
-            background-color: white;
-            cursor: pointer;
-            outline: none;
-        }
-        button {
-            background-color: #009639;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover { background-color: #007a2e; }
-        button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        
-        #btnResetZoom { background-color: #005a9c; display: none; }
-        #btnResetZoom:hover { background-color: #004070; }
-        #estadoCarga { font-size: 14px; color: #666; margin-top: 5px; font-style: italic; }
+    .sheet{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;margin-bottom:10px;}
+    .sheet-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:10px;}
+    .sheet h2{font-size:15px;margin:0 0 2px;color:var(--epm-dark);}
+    .sheet p{margin:0;color:var(--muted);font-size:11.5px;}
+    .overview-date{font-size:11px;color:var(--muted);background:#f2f6f9;border:1px solid var(--line);padding:5px 9px;border-radius:999px;white-space:nowrap;}
+    .overview-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
+    .overview-card{position:relative;min-height:104px;border:1px solid #e5edf3;border-radius:12px;background:#fff;padding:9px 10px;overflow:hidden;}
+    .overview-card:before{content:'';position:absolute;left:0;top:0;height:100%;width:4px;background:var(--metric-color,var(--epm-green));}
+    .overview-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;}
+    .overview-label{font-size:11px;font-weight:750;color:#334155;line-height:1.22;min-height:28px;margin:0 0 4px;}
+    .status-dot{min-width:8px;width:8px;height:8px;border-radius:999px;background:#cbd5e1;margin-top:3px;}
+    .status-dot.ok{background:var(--epm-green)}.status-dot.error{background:#e11d48}.status-dot.loading{background:var(--epm-blue);animation:pulse 1s infinite}
+    .overview-value{font-size:18px;font-weight:800;color:#111827;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .overview-unit{font-size:10.5px;color:var(--muted);font-weight:650;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .overview-cutoff{font-size:10px;color:#94a3b8;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .overview-meta{font-size:9.5px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-        /* Contenedores de KPIs */
-        .kpi-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .kpi-card {
-            flex: 1;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border-left: 4px solid #005a9c; /* Azul Corporativo */
-            text-align: center;
-        }
-        .kpi-card h3 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
-            color: #666;
-            text-transform: uppercase;
-        }
-        .kpi-card .valor {
-            font-size: 26px;
-            font-weight: bold;
-            color: #333;
-        }
-        .kpi-card .unidad { font-size: 14px; color: #888; font-weight: bold; margin-top: 2px;}
+    .control-bar{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 12px;margin-bottom:10px;}
+    .control-note{font-size:11px;color:var(--muted);margin:0 0 8px;}
+    .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    select{height:34px;border:1px solid #cbd8e3;border-radius:9px;background:#fff;color:#1f2937;padding:0 10px;font-size:12px;font-weight:650;outline:none;min-width:180px;}
+    #selectorMetrica{min-width:310px;color:var(--epm-blue);border-color:#b8cce0;}
+    #selectorEntidad{display:none;min-width:220px;color:#6d28d9;border-color:#d8b4fe;}
+    .btn-zoom{height:32px;min-width:32px;padding:0 9px;background:#eff6ff;color:var(--epm-blue);border:1px solid #cfe0f2;border-radius:9px;}
+    .btn-reset{background:#f1f5f9;color:#334155;border:1px solid #d8e0e8;}
 
-        /* Marco de la Gráfica */
-        .grafico-wrapper {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .grafico-container {
-            position: relative;
-            height: 450px;
-            width: 100%;
-        }
-    </style>
+    .analysis-grid{display:grid;grid-template-columns: 1fr 250px;gap:10px;align-items:start;}
+    .chart-panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px;min-width:0;}
+    .chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px;}
+    .chart-title{font-size:14px;font-weight:800;color:var(--epm-dark);margin:0;}
+    .chart-subtitle{font-size:10.5px;color:var(--muted);margin:2px 0 0;}
+    .chip{font-size:10px;color:var(--epm-blue);background:#eef6ff;border:1px solid #cfe4f8;border-radius:999px;padding:4px 8px;white-space:nowrap;}
+    .chart-box{height:315px;position:relative;}
+    .empty-state{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#64748b;font-size:12px;background:rgba(255,255,255,.82);z-index:2;border-radius:10px;}
+    .empty-state.hidden{display:none;}
+    .side-panel{display:flex;flex-direction:column;gap:8px;}
+    .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+    .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:0 6px 16px rgba(15,23,42,.04);min-height:64px;}
+    .kpi-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:#64748b;font-weight:800;margin:0 0 3px;}
+    .kpi-value{font-size:15px;font-weight:850;color:#111827;line-height:1.1;word-break:break-word;}
+    .kpi-unit{font-size:9.5px;color:#94a3b8;margin-top:2px;}
+    .insights{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px;box-shadow:0 6px 16px rgba(15,23,42,.04);}
+    .insights h3{font-size:12px;color:var(--epm-dark);margin:0 0 7px;}
+    .insights p{font-size:10.5px;color:#64748b;margin:5px 0;line-height:1.35;}
+    .validation{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px;box-shadow:0 6px 16px rgba(15,23,42,.04);max-height:142px;overflow:auto;}
+    .validation h3{font-size:12px;color:var(--epm-dark);margin:0 0 7px;}
+    .validation-row{display:flex;justify-content:space-between;gap:8px;font-size:10px;border-bottom:1px solid #eef2f6;padding:4px 0;color:#64748b;}
+    .validation-row:last-child{border-bottom:0}.validation-row b{color:#334155}.validation-row .ok{color:var(--epm-green);font-weight:800}.validation-row .error{color:#e11d48;font-weight:800}
+
+    @media(max-width:1100px){.overview-grid{grid-template-columns:repeat(4,1fr)}.analysis-grid{grid-template-columns:1fr}.side-panel{display:grid;grid-template-columns:1fr 1fr}.hero-actions{min-width:auto}.chart-box{height:300px}}
+    @media(max-width:760px){.app{padding:10px}.hero{align-items:flex-start;flex-direction:column}.overview-grid{grid-template-columns:repeat(2,1fr)}.side-panel{display:block}.side-panel>*{margin-bottom:8px}.chart-box{height:275px}select,#selectorMetrica{min-width:100%;}.hero-actions{width:100%;justify-content:space-between}.progress-shell{flex:1}}
+  </style>
 </head>
 <body>
+  <main class="app">
+    <p class="top-note">Fuente: API BI XM · Consulta por indicador según endpoint, entidad y periodicidad del inventario suministrado. Los datos se validan uno a uno durante la actualización.</p>
 
-    <div class="contenedor">
-        <div class="header-dashboard">
-            <div>
-                <h2>Panel de Control Operativo - XM</h2>
-                <div id="estadoCarga">Haz clic en "Actualizar Datos" para sincronizar la historia desde 2025.</div>
-            </div>
-            <div class="controles">
-                <select id="selectorMetrica" onchange="alternarVistaMetrica()">
-                    <option value="demanda">Demanda Real Regulada</option>
-                    <option value="precio">Precio de Bolsa Nacional</option>
-                </select>
-                <button id="btnResetZoom" onclick="restablecerZoom()">Ver Toda la Historia</button>
-                <button id="btnActualizar" onclick="iniciarExtraccionHistorica()">Actualizar Datos</button>
-            </div>
+    <section class="hero" aria-label="Encabezado principal">
+      <h1>Panel de Control Operativo del Mercado de Energía</h1>
+      <div class="hero-actions">
+        <button id="btnActualizar" onclick="iniciarExtraccionHistorica()">Actualizar datos</button>
+        <div class="progress-shell" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+        <span id="statusCheck" class="status-check" title="Pendiente de actualización">✓</span>
+      </div>
+    </section>
+
+    <section class="sheet" aria-label="Resumen ejecutivo por indicador">
+      <div class="sheet-head">
+        <div>
+          <h2>Resumen ejecutivo de indicadores</h2>
+          <p>Último dato disponible por variable, con estado de carga y fecha de corte.</p>
         </div>
+        <span class="overview-date" id="overviewFechaCorte">Pendiente de actualización</span>
+      </div>
+      <div class="overview-grid" id="overviewGrid"></div>
+    </section>
 
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <h3>Máximo Histórico</h3>
-                <div class="valor" id="kpiMax">--</div>
-                <div class="unidad" id="unitMax">-</div>
-            </div>
-            <div class="kpi-card">
-                <h3>Promedio Histórico</h3>
-                <div class="valor" id="kpiAvg">--</div>
-                <div class="unidad" id="unitAvg">-</div>
-            </div>
-            <div class="kpi-card">
-                <h3>Mínimo Histórico</h3>
-                <div class="valor" id="kpiMin">--</div>
-                <div class="unidad" id="unitMin">-</div>
-            </div>
+    <section class="control-bar" aria-label="Controles del gráfico">
+      <p class="control-note">Selecciona el indicador para interactuar con el gráfico. Usa el roll del mouse sobre la visual para acercar o alejar.</p>
+      <div class="controls">
+        <select id="selectorMetrica" onchange="alternarVistaMetrica()" aria-label="Seleccionar indicador"></select>
+        <select id="selectorRango" aria-label="Seleccionar rango de consulta">
+          <option value="90" selected>Últimos 90 días</option>
+          <option value="180">Últimos 180 días</option>
+          <option value="365">Últimos 12 meses</option>
+          <option value="historico">Histórico desde 2025</option>
+          <option value="desde2024">Desde mayo 2024</option>
+        </select>
+        <select id="selectorEntidad" onchange="alternarVistaMetrica()" aria-label="Seleccionar entidad"><option value="TODOS">Suma nacional / todos</option></select>
+        <button class="btn-zoom" onclick="moverVentana(-1)" title="Mover a la izquierda">←</button>
+        <button class="btn-zoom" onclick="ajustarZoomManual(1.55)" title="Alejar">−</button>
+        <button class="btn-zoom" onclick="ajustarZoomManual(0.62)" title="Acercar">+</button>
+        <button class="btn-zoom" onclick="moverVentana(1)" title="Mover a la derecha">→</button>
+        <button id="btnResetZoom" class="btn-zoom btn-reset" onclick="restablecerZoom()">Ver todo</button>
+      </div>
+    </section>
+
+    <section class="analysis-grid" aria-label="Análisis detallado">
+      <article class="chart-panel">
+        <div class="chart-head">
+          <div>
+            <h2 class="chart-title" id="tituloGrafico">Análisis detallado</h2>
+            <p class="chart-subtitle" id="subtituloGrafico">Actualiza los datos para iniciar el análisis.</p>
+          </div>
+          <span class="chip" id="chipFrecuencia">Frecuencia</span>
         </div>
-
-        <div class="grafico-wrapper">
-            <div class="grafico-container">
-                <canvas id="graficoDemanda"></canvas>
-            </div>
+        <div class="chart-box">
+          <canvas id="graficoDemanda"></canvas>
+          <div class="empty-state" id="emptyState">Actualiza los datos para visualizar la serie.</div>
         </div>
-    </div>
+      </article>
 
-    <script>
-        let miGrafico = null;
-        
-        // Estructuras de almacenamiento global para la historia indexada
-        let historialEtiquetas = [];
-        let historialDemanda = [];
-        let historialPrecio = [];
+      <aside class="side-panel">
+        <div class="kpi-grid">
+          <div class="kpi"><p class="kpi-label">Máximo</p><div class="kpi-value" id="kpiMax">--</div><div class="kpi-unit" id="unitMax">-</div></div>
+          <div class="kpi"><p class="kpi-label">Mínimo</p><div class="kpi-value" id="kpiMin">--</div><div class="kpi-unit" id="unitMin">-</div></div>
+          <div class="kpi"><p class="kpi-label">Promedio</p><div class="kpi-value" id="kpiAvg">--</div><div class="kpi-unit" id="unitAvg">-</div></div>
+          <div class="kpi"><p class="kpi-label">Último</p><div class="kpi-value" id="kpiLast">--</div><div class="kpi-unit" id="unitLast">-</div></div>
+        </div>
+        <div class="insights">
+          <h3>Lectura ejecutiva</h3>
+          <p id="insightMetrica">Sin indicador seleccionado.</p>
+          <p id="insightPeriodo">Periodo pendiente.</p>
+          <p id="insightRegistros">Registros pendientes.</p>
+        </div>
+        <div class="validation">
+          <h3>Validación de carga</h3>
+          <div id="validationList"><div class="validation-row"><span>Esperando actualización</span><span>--</span></div></div>
+        </div>
+      </aside>
+    </section>
+  </main>
 
-        // Plugin Línea Vertical de Seguimiento (Crosshair)
-        const pluginLineaVertical = {
-            id: 'lineaVertical',
-            afterDraw: chart => {
-                if (chart.tooltip?._active?.length) {
-                    let x = chart.tooltip._active[0].element.x;
-                    let yAxis = chart.scales.y;
-                    let ctx = chart.ctx;
-                    
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(x, yAxis.top);
-                    ctx.lineTo(x, yAxis.bottom);
-                    ctx.lineWidth = 1.5;
-                    ctx.strokeStyle = '#005a9c'; 
-                    ctx.setLineDash([5, 5]); 
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            }
-        };
+  <script>
+    try {
+      if (window.Chart && window.ChartZoom) Chart.register(window.ChartZoom);
+      if (window.Chart && window['chartjs-plugin-annotation']) Chart.register(window['chartjs-plugin-annotation']);
+    } catch (e) { console.warn('No fue posible registrar plugins Chart.js:', e); }
 
-        async function iniciarExtraccionHistorica() {
-            const btn = document.getElementById('btnActualizar');
-            const btnZoom = document.getElementById('btnResetZoom');
-            const estado = document.getElementById('estadoCarga');
-            
-            btn.disabled = true;
-            btnZoom.style.display = 'none';
-            estado.style.color = "#005a9c";
+    let miGrafico = null;
+    let estadoGraficoActual = { etiquetas: [], frecuencia: 'diario' };
 
-            let fechaInicioCiclo = new Date('2025-01-01');
-            const fechaFinGlobal = new Date();
-            
-            // Reiniciamos los arreglos para evitar duplicidades en actualizaciones limpias
-            historialEtiquetas = [];
-            historialDemanda = [];
-            historialPrecio = [];
+    const API_BASE = 'https://servapibi.xm.com.co';
 
-            try {
-                while (fechaInicioCiclo <= fechaFinGlobal) {
-                    let fechaFinCiclo = new Date(fechaInicioCiclo);
-                    fechaFinCiclo.setDate(fechaFinCiclo.getDate() + 29);
-                    
-                    if (fechaFinCiclo > fechaFinGlobal) fechaFinCiclo = fechaFinGlobal;
+    const metricasConfig = [
+      { key:'demanda_real_reg', titulo:'Demanda Real Regulada', metricId:'DemaRealReg', endpoint:'hourly', frecuencia:'horaria', entity:'Sistema', unit:'kWh', maxDays:31, color:'#009639', tipo:'hourly', descripcion:'Demanda real regulada por sistema.' },
+      { key:'precio_bolsa_horario', titulo:'Precio de Bolsa Nacional', metricId:'PrecBolsNaci', endpoint:'hourly', frecuencia:'horaria', entity:'Sistema', unit:'$/kWh', maxDays:31, color:'#005a9c', tipo:'hourly', descripcion:'Precio de bolsa nacional horario.' },
+      { key:'volumen_sistema', titulo:'Volumen Útil Diario Energía por Sistema', metricId:'VoluUtilDiarEner', endpoint:'daily', frecuencia:'diaria', entity:'Sistema', unit:'kWh', maxDays:31, color:'#009639', tipo:'entities', agregable:false, descripcion:'Volumen almacenado por encima del nivel mínimo técnico por sistema.' },
+      { key:'demanda_sin', titulo:'Demanda Energía SIN por Sistema', metricId:'DemaSIN', endpoint:'daily', frecuencia:'diaria', entity:'Sistema', unit:'kWh', maxDays:31, color:'#0e7490', tipo:'entities', agregable:false, descripcion:'Demanda del SIN.' },
+      { key:'volumen_embalse', titulo:'Volumen Útil Diario Energía por Embalse', metricId:'VoluUtilDiarEner', endpoint:'daily', frecuencia:'diaria', entity:'Embalse', unit:'kWh', maxDays:31, color:'#7c3aed', tipo:'entities', agregable:true, filtro:'Nombre Embalse', descripcion:'Volumen útil diario por embalse.' },
+      { key:'precio_ponderado', titulo:'Precio Bolsa Nacional Ponderado por Sistema', metricId:'PPPrecBolsNaci', metricIdFallbacks:['PPPrecBolsNaci','PPrecBolsNaci','PrecBolsNaci'], endpoint:'daily', frecuencia:'diaria', entity:'Sistema', unit:'COP/kWh', maxDays:31, color:'#2563eb', tipo:'entities', agregable:false, descripcion:'Precio de bolsa nacional ponderado por sistema.' },
+      { key:'precio_escasez', titulo:'Precio Escasez Activación por Sistema', metricId:'PrecEscaAct', endpoint:'daily', frecuencia:'diaria', entity:'Sistema', unit:'COP/kWh', maxDays:31, color:'#dc2626', tipo:'entities', agregable:false, descripcion:'Precio de escasez de activación.' },
+      { key:'mc', titulo:'MC por Sistema', metricId:'MC', endpoint:'monthly', frecuencia:'mensual', entity:'Sistema', unit:'COP/kWh', maxDays:731, color:'#334155', tipo:'entities', agregable:false, descripcion:'Costo promedio ponderado por energía.' },
+      { key:'cargo_stn', titulo:'Cargos por Uso STN por Sistema', metricId:'CargoUsoSTN', endpoint:'monthly', frecuencia:'mensual', entity:'Sistema', unit:'COP', maxDays:731, color:'#64748b', tipo:'entities', agregable:false, descripcion:'Cargos por uso del Sistema de Transmisión Nacional.' },
+      { key:'cargo_str', titulo:'Cargos por Uso STR por Sistema', metricId:'CargoUsoSTR', endpoint:'monthly', frecuencia:'mensual', entity:'Sistema', unit:'COP', maxDays:731, color:'#475569', tipo:'entities', agregable:false, descripcion:'Cargos por uso del Sistema de Transmisión Regional.' },
+      { key:'upme_alto', titulo:'Demanda Proyectada UPME Escenario Alto', metricId:'EscDemUPMEAlto', endpoint:'monthly', frecuencia:'mensual', entity:'Sistema', unit:'kWh', maxDays:731, color:'#16a34a', tipo:'entities', agregable:false, descripcion:'Proyección de demanda de energía UPME escenario alto.' },
+      { key:'upme_medio', titulo:'Demanda Proyectada UPME Escenario Medio', metricId:'EscDemUPMEMedio', endpoint:'monthly', frecuencia:'mensual', entity:'Sistema', unit:'kWh', maxDays:731, color:'#0f766e', tipo:'entities', agregable:false, descripcion:'Proyección de demanda de energía UPME escenario medio.' },
+      { key:'upme_bajo', titulo:'Demanda Proyectada UPME Escenario Bajo', metricId:'EscDemUPMEBajo', endpoint:'monthly', frecuencia:'mensual', entity:'Sistema', unit:'kWh', maxDays:731, color:'#84cc16', tipo:'entities', agregable:false, descripcion:'Proyección de demanda de energía UPME escenario bajo.' }
+    ];
 
-                    const strInicio = fechaInicioCiclo.toISOString().split('T')[0];
-                    const strFin = fechaFinCiclo.toISOString().split('T')[0];
+    const store = {};
+    const validaciones = {};
 
-                    estado.innerText = `Sincronizando bloque de mercado: ${strInicio} al ${strFin}...`;
+    function crearStoreVacio(config){
+      return { labels:[], values:[], details:[], entities:new Set(), metricIdUsado:config.metricId, cargado:false };
+    }
 
-                    // Descarga paralela de ambas métricas para optimizar rendimiento de red
-                    const [resDemanda, resPrecio] = await Promise.all([
-                        consultarAPI_XM('DemaRealReg', strInicio, strFin),
-                        consultarAPI_XM('PrecBolsNaci', strInicio, strFin)
-                    ]);
+    function inicializarPanel(){
+      metricasConfig.forEach(c => { store[c.key] = crearStoreVacio(c); validaciones[c.key] = {estado:'pendiente', registros:0, metricId:c.metricId}; });
+      const selector = document.getElementById('selectorMetrica');
+      selector.innerHTML = metricasConfig.map(c => `<option value="${c.key}">${c.titulo}</option>`).join('');
+      pintarOverviewInicial();
+      actualizarValidacion();
+      const canvas = document.getElementById('graficoDemanda');
+      canvas.addEventListener('wheel', zoomConRueda, { passive:false });
+    }
 
-                    procesarBloquesHorarios(resDemanda, resPrecio);
+    function pintarOverviewInicial(){
+      const grid = document.getElementById('overviewGrid');
+      grid.innerHTML = metricasConfig.map(c => `
+        <article class="overview-card" id="card_${c.key}" style="--metric-color:${c.color}">
+          <div class="overview-top"><p class="overview-label">${c.titulo}</p><span class="status-dot" id="dot_${c.key}"></span></div>
+          <div class="overview-value" id="val_${c.key}">--</div>
+          <div class="overview-unit">${c.unit}</div>
+          <div class="overview-cutoff" id="fecha_${c.key}">Sin datos</div>
+          <div class="overview-meta">${c.metricId} · ${c.entity} · ${c.frecuencia}</div>
+        </article>`).join('');
+    }
 
-                    fechaInicioCiclo.setDate(fechaInicioCiclo.getDate() + 30);
-                }
+    function setEstado(mensaje, tipo='info'){
+      const check = document.getElementById('statusCheck');
+      check.textContent = tipo === 'ok' ? '✓' : (tipo === 'error' ? '!' : '↻');
+      check.className = `status-check ${tipo}`;
+      check.title = mensaje || '';
+    }
 
-                estado.innerText = `¡Datos sincronizados! Mostrando ventana analítica de los últimos 7 días.`;
-                estado.style.color = "#009639";
-                btnZoom.style.display = 'block';
+    function setProgreso(actual,total){
+      const p = total ? Math.round((actual/total)*100) : 0;
+      document.getElementById('progressBar').style.width = `${Math.min(100,p)}%`;
+    }
 
-                // Renderizar la vista inicial del dashboard
-                alternarVistaMetrica();
+    function formatearNumeroCompleto(valor, decimales=2){
+      if(valor === null || valor === undefined || isNaN(valor)) return '--';
+      return Number(valor).toLocaleString('es-CO', { maximumFractionDigits: decimales });
+    }
 
-            } catch (error) {
-                console.error(error);
-                estado.innerText = "Error en la comunicación con la API de XM. Revisa la consola corporativa.";
-                estado.style.color = "red";
-            } finally {
-                btn.disabled = false;
-            }
+    function formatearNumero(valor, decimales=2){
+      if(valor === null || valor === undefined || isNaN(valor)) return '--';
+      const n = Number(valor);
+      const abs = Math.abs(n);
+      const escalas = [
+        { limite:1e12, divisor:1e12, sufijo:' B' },
+        { limite:1e9, divisor:1e9, sufijo:' mil M' },
+        { limite:1e6, divisor:1e6, sufijo:' M' },
+        { limite:1e3, divisor:1e3, sufijo:' K' }
+      ];
+      const escala = escalas.find(e => abs >= e.limite);
+      if(!escala) return formatearNumeroCompleto(n, decimales);
+      const escalado = n / escala.divisor;
+      const d = Math.abs(escalado) >= 100 ? 0 : (Math.abs(escalado) >= 10 ? 1 : 2);
+      return escalado.toLocaleString('es-CO', { maximumFractionDigits:d }) + escala.sufijo;
+    }
+
+    function textoConValorCompleto(valor, unidad){
+      const bonito = formatearNumero(valor);
+      const completo = formatearNumeroCompleto(valor);
+      if(bonito === '--') return '--';
+      return bonito === completo ? `${bonito} ${unidad}` : `${bonito} ${unidad} · completo: ${completo}`;
+    }
+
+    function normalizarNumeroXM(valor){
+      if(valor === null || valor === undefined || valor === '') return null;
+      if(typeof valor === 'number') return Number.isFinite(valor) ? valor : null;
+      let limpio = String(valor).trim().replace(/\s/g,'');
+      if(!limpio) return null;
+      const tieneComa = limpio.includes(','), tienePunto = limpio.includes('.');
+      if(tieneComa && tienePunto){
+        const ultimaComa = limpio.lastIndexOf(','), ultimoPunto = limpio.lastIndexOf('.');
+        limpio = ultimaComa > ultimoPunto ? limpio.replace(/\./g,'').replace(',', '.') : limpio.replace(/,/g,'');
+      } else if(tieneComa){ limpio = limpio.replace(',', '.'); }
+      const n = Number(limpio);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function crearBloquesFecha(inicio, fin, diasPorBloque){
+      const bloques = [];
+      const cursor = new Date(inicio);
+      const limite = new Date(fin);
+      while(cursor <= limite){
+        const desde = new Date(cursor);
+        const hasta = new Date(cursor);
+        hasta.setDate(hasta.getDate() + diasPorBloque - 1);
+        if(hasta > limite) hasta.setTime(limite.getTime());
+        bloques.push({ inicio: desde.toISOString().slice(0,10), fin: hasta.toISOString().slice(0,10) });
+        cursor.setDate(cursor.getDate() + diasPorBloque);
+      }
+      return bloques;
+    }
+
+    function rangoFechas(){
+      const rango = document.getElementById('selectorRango').value;
+      const fin = new Date();
+      const inicio = new Date(fin);
+      if(rango === 'historico') return { inicio:'2025-01-01', fin:fin.toISOString().slice(0,10) };
+      if(rango === 'desde2024') return { inicio:'2024-05-01', fin:fin.toISOString().slice(0,10) };
+      inicio.setDate(inicio.getDate() - Number(rango) + 1);
+      return { inicio:inicio.toISOString().slice(0,10), fin:fin.toISOString().slice(0,10) };
+    }
+
+    async function fetchConTimeout(url, opciones={}, timeoutMs=25000){
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try { return await fetch(url, { ...opciones, signal:controller.signal }); }
+      finally { clearTimeout(timer); }
+    }
+
+    async function consultarAPI_XM(config, fechaInicial, fechaFinal, metricId, intento=1){
+      const url = `${API_BASE}/${config.endpoint}`;
+      const peticion = { MetricId: metricId || config.metricId, StartDate: fechaInicial, EndDate: fechaFinal, Entity: config.entity, Filter: [] };
+      try{
+        const respuesta = await fetchConTimeout(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(peticion) });
+        if(!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+        return await respuesta.json();
+      }catch(error){
+        if(intento < 2 && error?.name !== 'AbortError'){
+          await new Promise(r => setTimeout(r, 550));
+          return consultarAPI_XM(config, fechaInicial, fechaFinal, metricId, intento+1);
         }
+        console.warn(`Fallo ${config.titulo} ${fechaInicial}-${fechaFinal}`, peticion, error);
+        throw error;
+      }
+    }
 
-        async function consultarAPI_XM(metricId, fechaInicial, fechaFinal) {
-            const url = "https://servapibi.xm.com.co/hourly";
-            const peticion = {
-                "MetricId": metricId,
-                "StartDate": fechaInicial,
-                "EndDate": fechaFinal,
-                "Entity": "Sistema",
-                "Filter": []
-            };
-
-            const respuesta = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(peticion)
-            });
-
-            if (!respuesta.ok) throw new Error(`HTTP Error: ${respuesta.status}`);
-            return await respuesta.json();
+    function obtenerItemsXM(json){
+      if(!json) return [];
+      if(Array.isArray(json.Items)) return json.Items;
+      if(json.root && Array.isArray(json.root.Items)) return json.root.Items;
+      const encontrados = [];
+      const visitar = (obj, profundidad=0) => {
+        if(!obj || profundidad > 4) return;
+        if(Array.isArray(obj)){
+          if(obj.some(x => x && typeof x === 'object' && ('Date' in x || 'date' in x || 'Fecha' in x))) encontrados.push(...obj);
+          obj.forEach(x => visitar(x, profundidad+1));
+        } else if(typeof obj === 'object'){
+          Object.values(obj).forEach(v => visitar(v, profundidad+1));
         }
+      };
+      visitar(json);
+      return encontrados;
+    }
 
-        // Procesa y alinea las respuestas horarias de ambas variables
-        function procesarBloquesHorarios(jsonDemanda, jsonPrecio) {
-            if (!jsonDemanda.Items || !jsonPrecio.Items) return;
-            
-            const itemsD = jsonDemanda.Items;
-            const itemsP = jsonPrecio.Items;
+    function extraerFecha(item){
+      const f = item?.Date ?? item?.date ?? item?.Fecha ?? item?.fecha ?? item?.StartDate;
+      return f ? String(f).split('T')[0] : null;
+    }
 
-            for (let idx = 0; idx < itemsD.length; idx++) {
-                const itemD = itemsD[idx];
-                const itemP = itemsP[idx];
-                if (!itemD || !itemP) continue;
-
-                const fecha = itemD.Date.split('T')[0];
-                const horasD = itemD.HourlyEntities?.[0]?.Values;
-                const horasP = itemP.HourlyEntities?.[0]?.Values;
-
-                if (horasD && horasP) {
-                    for (let i = 1; i <= 24; i++) {
-                        let horaStr = String(i).padStart(2, '0');
-                        let llaveHora = "Hour" + horaStr;
-                        
-                        if (horasD[llaveHora] !== undefined && horasP[llaveHora] !== undefined) {
-                            historialEtiquetas.push(`${fecha} ${horaStr}:00`);
-                            historialDemanda.push(Number(horasD[llaveHora]));
-                            historialPrecio.push(Number(horasP[llaveHora]));
-                        }
-                    }
-                }
-            }
+    function extraerEntidades(item, config){
+      const llavesPreferidas = ['DailyEntities','MonthlyEntities','Entities','MetricEntities','Data','Valores'];
+      let entidades = [];
+      for(const key of llavesPreferidas){
+        const val = item?.[key] ?? item?.[key.charAt(0).toLowerCase()+key.slice(1)];
+        if(Array.isArray(val)) entidades = entidades.concat(val);
+        else if(val && typeof val === 'object') entidades = entidades.concat(Object.values(val));
+      }
+      Object.keys(item || {}).forEach(k => {
+        if(/entities$/i.test(k) && !llavesPreferidas.includes(k)){
+          const val = item[k];
+          if(Array.isArray(val)) entidades = entidades.concat(val);
+          else if(val && typeof val === 'object') entidades = entidades.concat(Object.values(val));
         }
+      });
+      if(entidades.length === 0 && ('Value' in item || 'value' in item)) entidades = [item];
+      return entidades.filter(e => e && typeof e === 'object');
+    }
 
-        // Lee el selector del menú y actualiza la pantalla dinámicamente
-        function alternarVistaMetrica() {
-            if (historialEtiquetas.length === 0) return;
-
-            const metricaSeleccionada = document.getElementById('selectorMetrica').value;
-            
-            let datosAMostrar = [];
-            let nombreDataset = "";
-            let unidadTexto = "";
-            let colorLinea = "";
-            let colorFondo = "";
-
-            if (metricaSeleccionada === 'demanda') {
-                datosAMostrar = historialDemanda;
-                nombreDataset = "Demanda Real Regulada";
-                unidadTexto = "kWh";
-                colorLinea = "#009639"; // Verde
-                colorFondo = "rgba(0, 150, 57, 0.1)";
-            } else {
-                datosAMostrar = historialPrecio;
-                nombreDataset = "Precio de Bolsa Nacional";
-                unidadTexto = "$/kWh";
-                colorLinea = "#005a9c"; // Azul
-                colorFondo = "rgba(0, 90, 156, 0.1)";
-            }
-
-            // 1. Recalcular e Inyectar KPIs para la variable activa
-            actualizarTarjetasKPI(datosAMostrar, unidadTexto);
-
-            // 2. Dibujar o refrescar el gráfico con la nueva variable
-            renderizarGraficoEstructurado(nombreDataset, datosAMostrar, unidadTexto, colorLinea, colorFondo);
+    function procesarHourly(json, destino){
+      const items = obtenerItemsXM(json);
+      items.forEach(item => {
+        const fecha = extraerFecha(item);
+        const entidades = item.HourlyEntities || item.hourlyEntities || [];
+        const primer = Array.isArray(entidades) ? entidades[0] : entidades;
+        const values = primer?.Values || primer?.values || {};
+        if(!fecha || !values) return;
+        for(let h=1; h<=24; h++){
+          const hh = String(h).padStart(2,'0');
+          const valor = normalizarNumeroXM(values[`Hour${hh}`] ?? values[`hour${hh}`] ?? values[hh]);
+          if(valor !== null){ destino.labels.push(`${fecha} ${hh}:00`); destino.values.push(valor); }
         }
+      });
+    }
 
-        function actualizarTarjetasKPI(valores, unidad) {
-            const maxVal = valores.reduce((a, b) => Math.max(a, b), -Infinity);
-            const minVal = valores.reduce((a, b) => Math.min(a, b), Infinity);
-            const sumVal = valores.reduce((a, b) => a + b, 0);
-            const avgVal = sumVal / valores.length;
-
-            // Formateo numérico descriptivo de miles y decimales
-            document.getElementById('kpiMax').innerText = maxVal.toLocaleString('es-CO', {maximumFractionDigits: 2});
-            document.getElementById('kpiMin').innerText = minVal.toLocaleString('es-CO', {maximumFractionDigits: 2});
-            document.getElementById('kpiAvg').innerText = avgVal.toLocaleString('es-CO', {maximumFractionDigits: 2});
-
-            // Actualizar etiquetas de unidad corporativa
-            document.getElementById('unitMax').innerText = unidad;
-            document.getElementById('unitMin').innerText = unidad;
-            document.getElementById('unitAvg').innerText = unidad;
+    function procesarEntities(json, config, destino){
+      const items = obtenerItemsXM(json);
+      items.forEach(item => {
+        const fecha = extraerFecha(item);
+        if(!fecha) return;
+        const entidades = extraerEntidades(item, config);
+        if(config.agregable){
+          const detalle = {};
+          entidades.forEach(ent => {
+            const valor = normalizarNumeroXM(ent.Value ?? ent.value ?? ent.Valor ?? ent.valor);
+            const nombre = ent.Name ?? ent.name ?? ent.Id ?? ent.id ?? config.entity;
+            if(valor !== null){ detalle[String(nombre)] = valor; destino.entities.add(String(nombre)); }
+          });
+          if(Object.keys(detalle).length){ destino.labels.push(fecha); destino.details.push(detalle); destino.values.push(Object.values(detalle).reduce((a,b)=>a+b,0)); }
+        }else{
+          let valor = null;
+          for(const ent of entidades){
+            valor = normalizarNumeroXM(ent.Value ?? ent.value ?? ent.Valor ?? ent.valor);
+            if(valor !== null) break;
+          }
+          if(valor !== null){ destino.labels.push(fecha); destino.values.push(valor); }
         }
+      });
+    }
 
-        function renderizarGraficoEstructurado(labelDataset, datos, unidad, colorLinea, colorFondo) {
-            const ctx = document.getElementById('graficoDemanda').getContext('2d');
+    function ordenarYDepurarSerie(destino, agregable=false){
+      const mapa = new Map();
+      destino.labels.forEach((label, i) => {
+        if(agregable) mapa.set(label, { value:destino.values[i], detail:destino.details[i] });
+        else mapa.set(label, { value:destino.values[i] });
+      });
+      const labels = Array.from(mapa.keys()).sort();
+      destino.labels = labels;
+      destino.values = labels.map(l => mapa.get(l).value);
+      if(agregable) destino.details = labels.map(l => mapa.get(l).detail || {});
+    }
 
-            if (miGrafico) miGrafico.destroy();
+    function ultimoValorValido(labels, values){
+      for(let i=values.length-1; i>=0; i--){
+        const v = values[i];
+        if(v !== null && v !== undefined && !isNaN(v)) return { valor:v, fecha:labels[i] || null };
+      }
+      return { valor:null, fecha:null };
+    }
 
-            // Cálculo matemático para forzar la ventana inicial a las últimas 168 horas (7 días)
-            const totalPuntos = historialEtiquetas.length;
-            const puntos7Dias = 7 * 24;
-            const indexMin = totalPuntos > puntos7Dias ? totalPuntos - puntos7Dias : 0;
-            const etiquetaMinima = historialEtiquetas[indexMin];
-            const etiquetaMaxima = historialEtiquetas[totalPuntos - 1];
+    function actualizarCardResumen(config){
+      const s = store[config.key];
+      const ult = ultimoValorValido(s.labels, s.values);
+      const val = document.getElementById(`val_${config.key}`);
+      const fecha = document.getElementById(`fecha_${config.key}`);
+      const dot = document.getElementById(`dot_${config.key}`);
+      val.textContent = formatearNumero(ult.valor);
+      val.title = ult.valor === null ? '' : `${formatearNumeroCompleto(ult.valor)} ${config.unit}`;
+      fecha.textContent = ult.fecha ? `Corte: ${ult.fecha}` : 'Sin datos';
+      dot.className = `status-dot ${ult.valor === null ? 'error' : 'ok'}`;
+    }
 
-            miGrafico = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: historialEtiquetas,
-                    datasets: [{
-                        label: labelDataset,
-                        data: datos,
-                        borderColor: colorLinea, 
-                        backgroundColor: colorFondo,
-                        borderWidth: 1.5,
-                        pointRadius: 0, 
-                        pointHoverRadius: 6, 
-                        pointHoverBackgroundColor: '#005a9c', 
-                        pointHoverBorderColor: 'white',
-                        pointHoverBorderWidth: 2,
-                        fill: true,
-                        tension: 0.1
-                    }]
-                },
-                plugins: [pluginLineaVertical],
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false, 
-                    },
-                    plugins: {
-                        tooltip: {
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            titleColor: '#004070',
-                            bodyColor: '#333',
-                            borderColor: '#ccc',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: function(context) {
-                                    return ' ' + context.parsed.y.toLocaleString('es-CO', {maximumFractionDigits: 2}) + ' ' + unidad;
-                                }
-                            }
-                        },
-                        zoom: {
-                            zoom: {
-                                wheel: { enabled: true },
-                                drag: { 
-                                    enabled: true, 
-                                    backgroundColor: 'rgba(0, 90, 156, 0.2)' 
-                                },
-                                mode: 'x', 
-                            },
-                            pan: { enabled: true, mode: 'x' }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            min: etiquetaMinima,
-                            max: etiquetaMaxima,
-                            ticks: { maxTicksLimit: 12 }
-                        },
-                        y: {
-                            beginAtZero: false,
-                            title: { display: true, text: unidad }
-                        }
-                    }
-                }
-            });
+    function actualizarFechaCorteGeneral(){
+      const fechas = metricasConfig.flatMap(c => store[c.key].labels).filter(Boolean).sort();
+      document.getElementById('overviewFechaCorte').textContent = fechas.length ? `Último corte general: ${fechas[fechas.length-1]}` : 'Pendiente de actualización';
+    }
+
+    function actualizarValidacion(){
+      const div = document.getElementById('validationList');
+      div.innerHTML = metricasConfig.map(c => {
+        const v = validaciones[c.key] || {estado:'pendiente', registros:0, metricId:c.metricId};
+        const clase = v.estado === 'OK' ? 'ok' : (v.estado === 'Sin datos' || v.estado === 'Error' ? 'error' : '');
+        return `<div class="validation-row"><span><b>${c.metricId}</b> · ${c.endpoint} · ${c.frecuencia}</span><span class="${clase}">${v.estado || 'pendiente'} (${v.registros || 0})</span></div>`;
+      }).join('');
+    }
+
+    function poblarEntidades(config){
+      const selector = document.getElementById('selectorEntidad');
+      selector.innerHTML = '<option value="TODOS">Suma nacional / todos</option>';
+      if(!config.agregable){ selector.style.display = 'none'; return; }
+      Array.from(store[config.key].entities).sort().forEach(nombre => {
+        const opt = document.createElement('option'); opt.value = nombre; opt.textContent = nombre; selector.appendChild(opt);
+      });
+      selector.style.display = 'inline-block';
+    }
+
+    async function cargarUnaMetrica(config, rango){
+      const destino = crearStoreVacio(config);
+      const idsAProbar = config.metricIdFallbacks || [config.metricId];
+      let ultimoError = null;
+      for(const metricId of idsAProbar){
+        const temp = crearStoreVacio(config); temp.metricIdUsado = metricId;
+        const bloques = crearBloquesFecha(rango.inicio, rango.fin, config.maxDays);
+        for(const bloque of bloques){
+          try{
+            const json = await consultarAPI_XM(config, bloque.inicio, bloque.fin, metricId);
+            if(config.tipo === 'hourly') procesarHourly(json, temp); else procesarEntities(json, config, temp);
+          }catch(e){ ultimoError = e; }
         }
-
-        function restablecerZoom() {
-            if (miGrafico) {
-                delete miGrafico.options.scales.x.min;
-                delete miGrafico.options.scales.x.max;
-                miGrafico.resetZoom();
-                miGrafico.update();
-                document.getElementById('estadoCarga').innerText = "Visualizando serie histórica completa desde el 1 de enero de 2025.";
-            }
+        ordenarYDepurarSerie(temp, config.agregable);
+        if(temp.values.some(v => v !== null && v !== undefined && !isNaN(v))){
+          store[config.key] = temp;
+          validaciones[config.key] = { estado:'OK', registros:temp.values.length, metricId };
+          actualizarCardResumen(config);
+          return;
         }
-    </script>
+      }
+      store[config.key] = destino;
+      validaciones[config.key] = { estado: ultimoError ? 'Error' : 'Sin datos', registros:0, metricId:config.metricId };
+      actualizarCardResumen(config);
+    }
+
+    async function iniciarExtraccionHistorica(){
+      const btn = document.getElementById('btnActualizar');
+      btn.disabled = true;
+      setEstado('Actualizando indicadores', 'info');
+      setProgreso(0, metricasConfig.length);
+      document.querySelectorAll('.status-dot').forEach(d => d.className = 'status-dot loading');
+
+      const rango = rangoFechas();
+      metricasConfig.forEach(c => { store[c.key] = crearStoreVacio(c); validaciones[c.key] = {estado:'pendiente', registros:0, metricId:c.metricId}; });
+      actualizarValidacion();
+
+      for(let i=0; i<metricasConfig.length; i++){
+        const config = metricasConfig[i];
+        await cargarUnaMetrica(config, rango);
+        setProgreso(i+1, metricasConfig.length);
+        actualizarValidacion();
+      }
+
+      actualizarFechaCorteGeneral();
+      alternarVistaMetrica();
+      setEstado('Actualización finalizada', 'ok');
+      btn.disabled = false;
+    }
+
+    function serieActual(config){
+      const s = store[config.key];
+      if(!config.agregable) return { labels:s.labels, values:s.values, nombre:config.titulo };
+      const filtro = document.getElementById('selectorEntidad').value;
+      if(filtro === 'TODOS') return { labels:s.labels, values:s.values, nombre:`${config.titulo} (Suma nacional)` };
+      const values = s.details.map(d => d ? (d[filtro] ?? null) : null);
+      return { labels:s.labels, values, nombre:`${config.titulo} (${filtro})` };
+    }
+
+    function alternarVistaMetrica(){
+      const key = document.getElementById('selectorMetrica').value;
+      const config = metricasConfig.find(c => c.key === key) || metricasConfig[0];
+      poblarEntidades(config);
+      const serie = serieActual(config);
+      if(!serie.values.length){
+        document.getElementById('tituloGrafico').textContent = config.titulo;
+        document.getElementById('subtituloGrafico').textContent = 'Sin datos disponibles para el rango consultado.';
+        document.getElementById('chipFrecuencia').textContent = `Frecuencia ${config.frecuencia}`;
+        document.getElementById('emptyState').classList.remove('hidden');
+        actualizarTarjetasKPI([], config.unit);
+        if(miGrafico) miGrafico.destroy();
+        return;
+      }
+      const estadisticas = actualizarTarjetasKPI(serie.values, config.unit);
+      document.getElementById('emptyState').classList.add('hidden');
+      actualizarLecturaEjecutiva(serie.nombre, serie.labels, serie.values, estadisticas, config);
+      renderizarGraficoEstructurado(serie.nombre, serie.labels, serie.values, config, estadisticas.promedio);
+    }
+
+    function actualizarTarjetasKPI(valores, unidad){
+      const validos = valores.filter(v => v !== null && v !== undefined && !isNaN(v));
+      if(!validos.length){
+        ['kpiMax','kpiMin','kpiAvg','kpiLast'].forEach(id => document.getElementById(id).textContent = '--');
+        ['unitMax','unitMin','unitAvg','unitLast'].forEach(id => document.getElementById(id).textContent = unidad || '-');
+        return {max:null,min:null,promedio:null,ultimo:null,validos:0};
+      }
+      const max = Math.max(...validos), min = Math.min(...validos), promedio = validos.reduce((a,b)=>a+b,0)/validos.length;
+      const ultimo = [...valores].reverse().find(v => v !== null && v !== undefined && !isNaN(v));
+      document.getElementById('kpiMax').textContent = formatearNumero(max);
+      document.getElementById('kpiMin').textContent = formatearNumero(min);
+      document.getElementById('kpiAvg').textContent = formatearNumero(promedio);
+      document.getElementById('kpiLast').textContent = formatearNumero(ultimo);
+      document.getElementById('kpiMax').title = `${formatearNumeroCompleto(max)} ${unidad}`;
+      document.getElementById('kpiMin').title = `${formatearNumeroCompleto(min)} ${unidad}`;
+      document.getElementById('kpiAvg').title = `${formatearNumeroCompleto(promedio)} ${unidad}`;
+      document.getElementById('kpiLast').title = `${formatearNumeroCompleto(ultimo)} ${unidad}`;
+      ['unitMax','unitMin','unitAvg','unitLast'].forEach(id => document.getElementById(id).textContent = unidad);
+      return {max,min,promedio,ultimo,validos:validos.length};
+    }
+
+    function actualizarLecturaEjecutiva(nombre, labels, valores, stats, config){
+      const inicio = labels[0] || '--', fin = labels[labels.length-1] || '--';
+      document.getElementById('tituloGrafico').textContent = nombre;
+      document.getElementById('subtituloGrafico').textContent = `Periodo consultado: ${inicio} → ${fin}`;
+      document.getElementById('chipFrecuencia').textContent = `Frecuencia ${config.frecuencia}`;
+      document.getElementById('insightMetrica').textContent = `${nombre} | Último dato: ${textoConValorCompleto(stats.ultimo, config.unit)}`;
+      document.getElementById('insightPeriodo').textContent = `${inicio} hasta ${fin}`;
+      document.getElementById('insightRegistros').textContent = `${stats.validos.toLocaleString('es-CO')} registros válidos de ${valores.length.toLocaleString('es-CO')} puntos`;
+    }
+
+    const pluginLineaVertical = { id:'lineaVertical', afterDraw: chart => {
+      if(chart.tooltip?._active?.length){
+        const x = chart.tooltip._active[0].element.x, yAxis = chart.scales.y, ctx = chart.ctx;
+        ctx.save(); ctx.beginPath(); ctx.moveTo(x,yAxis.top); ctx.lineTo(x,yAxis.bottom); ctx.lineWidth = 1; ctx.strokeStyle = '#005a9c'; ctx.setLineDash([4,4]); ctx.stroke(); ctx.restore();
+      }
+    }};
+
+    function renderizarGraficoEstructurado(labelDataset, etiquetas, datos, config, promedio){
+      const ctx = document.getElementById('graficoDemanda').getContext('2d');
+      if(miGrafico) miGrafico.destroy();
+      estadoGraficoActual = { etiquetas, frecuencia:config.frecuencia };
+      const points = datos.map((y,i) => ({ x:i, y }));
+      const total = etiquetas.length;
+      const ventana = Math.min(total, config.frecuencia === 'horaria' ? 168 : (config.frecuencia === 'mensual' ? 24 : 45));
+      const minInicial = Math.max(0, total - ventana);
+      const maxInicial = Math.max(0, total - 1);
+      miGrafico = new Chart(ctx, {
+        type:'line',
+        data:{ datasets:[{ label:labelDataset, data:points, parsing:false, borderColor:config.color, backgroundColor:hexToRgba(config.color,.09), borderWidth:1.8, pointRadius: config.frecuencia === 'horaria' ? 0 : 2, pointHoverRadius:5, tension:.18, fill:true, spanGaps:true }] },
+        plugins:[pluginLineaVertical],
+        options:{
+          responsive:true, maintainAspectRatio:false, animation:false, interaction:{mode:'nearest', intersect:false},
+          plugins:{
+            legend:{display:false},
+            tooltip:{backgroundColor:'rgba(255,255,255,.97)', titleColor:'#17324d', bodyColor:'#1f2937', borderColor:'#d7e1ea', borderWidth:1, padding:10, callbacks:{ title:items => etiquetas[Math.round(items[0].parsed.x)] || '', label:ctx => ` ${textoConValorCompleto(ctx.parsed.y, config.unit)}` }},
+            zoom:{ pan:{enabled:true, mode:'x'}, zoom:{wheel:{enabled:true, speed:.08}, pinch:{enabled:true}, drag:{enabled:true, backgroundColor:'rgba(0,90,156,.14)'}, mode:'x'} },
+            annotation:{ annotations: promedio !== null && !isNaN(promedio) ? { promedio:{ type:'line', yMin:promedio, yMax:promedio, borderColor:'#64748b', borderDash:[5,5], borderWidth:1.2, label:{display:true, content:`Promedio ${formatearNumero(promedio)} ${config.unit}`, position:'start', backgroundColor:'rgba(23,50,77,.85)', color:'#fff', font:{size:10, weight:'bold'}} } } : {} }
+          },
+          scales:{
+            x:{ type:'linear', min:minInicial, max:maxInicial, grid:{color:'rgba(148,163,184,.16)'}, ticks:{maxTicksLimit:9, callback:value => abreviarEtiqueta(etiquetas[Math.round(value)], config.frecuencia)} },
+            y:{ beginAtZero:false, grid:{color:'rgba(148,163,184,.18)'}, ticks:{callback:value => formatearNumero(value, 1)}, title:{display:true, text:config.unit, font:{size:11, weight:'bold'}} }
+          }
+        }
+      });
+    }
+
+    function abreviarEtiqueta(etiqueta, frecuencia){
+      if(!etiqueta) return '';
+      const t = String(etiqueta);
+      if(frecuencia === 'horaria') return t.slice(5,16).replace(':00','h');
+      if(frecuencia === 'mensual') return t.slice(0,7);
+      return t.slice(5);
+    }
+
+    function hexToRgba(hex, alpha){
+      const h = hex.replace('#','');
+      const bigint = parseInt(h.length === 3 ? h.split('').map(c=>c+c).join('') : h, 16);
+      const r = (bigint >> 16) & 255, g = (bigint >> 8) & 255, b = bigint & 255;
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function getRangoX(){
+      if(!miGrafico) return null;
+      const x = miGrafico.options.scales.x;
+      const maxData = estadoGraficoActual.etiquetas.length - 1;
+      return { min: Number.isFinite(x.min) ? x.min : 0, max: Number.isFinite(x.max) ? x.max : maxData, maxData };
+    }
+    function aplicarRangoX(min,max){
+      if(!miGrafico) return;
+      const maxData = estadoGraficoActual.etiquetas.length - 1;
+      const ancho = Math.max(2, max - min);
+      min = Math.max(0, min); max = Math.min(maxData, max);
+      if(max - min < 2){ max = Math.min(maxData, min + 2); }
+      miGrafico.options.scales.x.min = min;
+      miGrafico.options.scales.x.max = max;
+      miGrafico.update('none');
+    }
+    function ajustarZoomManual(factor){
+      const r = getRangoX(); if(!r) return;
+      const centro = (r.min + r.max)/2, mitad = ((r.max-r.min)*factor)/2;
+      aplicarRangoX(centro-mitad, centro+mitad);
+    }
+    function moverVentana(direccion){
+      const r = getRangoX(); if(!r) return;
+      const ancho = r.max-r.min, paso = Math.max(1, ancho*.35);
+      aplicarRangoX(r.min + paso*direccion, r.max + paso*direccion);
+    }
+    function restablecerZoom(){
+      if(!miGrafico) return;
+      if(typeof miGrafico.resetZoom === 'function') miGrafico.resetZoom();
+      miGrafico.options.scales.x.min = 0;
+      miGrafico.options.scales.x.max = Math.max(0, estadoGraficoActual.etiquetas.length - 1);
+      miGrafico.update('none');
+    }
+    function zoomConRueda(event){
+      if(!miGrafico) return;
+      event.preventDefault();
+      ajustarZoomManual(event.deltaY < 0 ? .82 : 1.22);
+    }
+
+    window.addEventListener('DOMContentLoaded', inicializarPanel);
+  </script>
 </body>
 </html>
